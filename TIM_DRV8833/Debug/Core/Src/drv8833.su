@@ -1,0 +1,8 @@
+../Core/Src/drv8833.c:31:20:__SetIn1SPEED	24	static
+../Core/Src/drv8833.c:41:20:__SetIn2SPEED	24	static
+../Core/Src/drv8833.c:50:6:DRV8833_Init	8	static
+../Core/Src/drv8833.c:60:6:DRV8833_SetDecayMode	16	static
+../Core/Src/drv8833.c:69:6:DRV8833_Forward	16	static
+../Core/Src/drv8833.c:87:6:DRV8833_Backward	16	static
+../Core/Src/drv8833.c:104:6:DRV8833_Brake	8	static
+../Core/Src/drv8833.c:113:6:DRV8833_Coast	8	static
