@@ -9,6 +9,8 @@
 #define INC_MPU6050_H_
 
 #include "i2c.h"
+#include "kalmanFilter_1D.h"
+/*--------------------------------------------------------------------------------------*/
 
 #define MPU_SELF_TESTX_REG		0X0D	//自检寄存器X
 #define MPU_SELF_TESTY_REG		0X0E	//自检寄存器Y
@@ -90,28 +92,31 @@
 #define MPU_READ    0XD1    //  (0x68 << 1) + 1 -> 0xD1 ; (0x69 << 1) + 1 -> 0XD3
 #define MPU_WRITE   0XD0    //  (0x68 << 1) + 0 -> 0xD0 ; (0x69 << 1) + 0 -> 0XD2
 
-void MPU_Set_I2C_Handle(I2C_HandleTypeDef *i2c);
-uint8_t MPU_Init(void); 						//初始化MPU6050
+/*--------------------------------------------------------------------------------------*/
 
-HAL_StatusTypeDef MPU_Calibrate_Accel_Data(int16_t *accel_bias);
-HAL_StatusTypeDef MPU_Calibrate_Gyro_Data(int16_t *gyro_bias);
+uint8_t mpu_init(void); 						//初始化MPU6050
 
-HAL_StatusTypeDef MPU_Write_Len(uint8_t reg,uint8_t len,uint8_t *buf);                           //IIC连续写
-HAL_StatusTypeDef MPU_Read_Len(uint8_t reg,uint8_t len,uint8_t *buf);                         //IIC连续读
-HAL_StatusTypeDef MPU_Write_Byte(uint8_t reg,uint8_t data);				//IIC写一个字节
-HAL_StatusTypeDef MPU_Read_Byte(uint8_t reg,uint8_t *data);					//IIC读一个字节
+HAL_StatusTypeDef MPU_Write_Len(uint8_t reg,uint8_t len,uint8_t *buf);
+HAL_StatusTypeDef MPU_Read_Len(uint8_t reg,uint8_t len,uint8_t *buf);
+HAL_StatusTypeDef MPU_Write_Byte(uint8_t reg,uint8_t data);
+HAL_StatusTypeDef MPU_Read_Byte(uint8_t reg,uint8_t *data);
 
 HAL_StatusTypeDef MPU_Set_Gyro_Fsr(uint8_t fsr);
 HAL_StatusTypeDef MPU_Set_Accel_Fsr(uint8_t fsr);
 HAL_StatusTypeDef MPU_Set_LPF(uint16_t lpf);
 HAL_StatusTypeDef MPU_Set_Rate(uint16_t rate);
 
-float MPU_Get_Temperature(void);
 HAL_StatusTypeDef MPU_Get_Gyroscope_Data(int16_t *gx,int16_t *gy,int16_t *gz);
 HAL_StatusTypeDef MPU_Get_Accelerometer_Data(int16_t *ax,int16_t *ay,int16_t *az);
 
+HAL_StatusTypeDef MPU_Calibrate_Accel_Data(int16_t *accel_bias);
+HAL_StatusTypeDef MPU_Calibrate_Gyro_Data(int16_t *gyro_bias);
+
 HAL_StatusTypeDef MPU_Get_Gyroscope(float *gx,float *gy,float *gz, int16_t *gyro_bias);
 HAL_StatusTypeDef MPU_Get_Accelerometer(float *ax,float *ay,float *az, int16_t *accel_bias);
+HAL_StatusTypeDef MPU_Get_Temperature(float* temp);
+
+/*--------------------------------------------------------------------------------------*/
 
 typedef struct {
     float Q;      // Kalman 过程噪声协方差
@@ -121,9 +126,21 @@ typedef struct {
     float roll_hat, pitch_hat;  // 估计值 （先验估计->后验估计）
 } AngleProcessor;
 
-void AngleProcessor_Init(AngleProcessor* processor, float Q, float R);
-void MPU_Get_Angle_KalmanFilter(int16_t* accel_bias ,int16_t* gyro_bias, AngleProcessor* processor, float time_interval);
+typedef struct {
+	float time_interval;
+	int16_t accel_bias;
+	int16_t gyro_bias;
+	KalmanFilter pitch_processor;
+	KalmanFilter roll_processor;
 
-void SendMessage(UART_HandleTypeDef *huart, const char *text);
+} IMUProcessor;
+
+void AngleProcessor_Init(AngleProcessor* processor, float Q, float R);
+
+void imu_processor_init(IMUProcessor* processor, float Q, float R, float time_interval);
+
+void imu_process(IMUProcessor* processor);
+
+void send_message_to_user(const char *text);
 
 #endif /* INC_MPU6050_H_ */

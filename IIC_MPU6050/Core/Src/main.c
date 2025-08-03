@@ -25,9 +25,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 #include "mpu6050.h"
 #include "stdio.h"
 #include "string.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,18 +51,12 @@
 
 /* USER CODE BEGIN PV */
 
-int16_t accel_bias[3] = {0, 0, 0};
-int16_t gyro_bias[3] = {0, 0, 0};
-
-int16_t ax_data, ay_data, az_data;
-int16_t gx_data, gy_data, gz_data;
-float ax, ay, az;
-float gx, gy, gz;
-
-AngleProcessor angle_processer;
+IMUProcessor imu_processor;
 
 char message[100] = "";
 
+float Q = 0.005f;
+float R = 0.05f;
 float time_interval = 0.006f;
 
 /* USER CODE END PV */
@@ -73,20 +69,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-/*
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
-	if (htim == &htim1){
-
-		MPU_Get_Angle_KalmanFilter(accel_bias, gyro_bias, &angle_processer, time_interval);
-		float roll = angle_processer.roll_hat;
-		float pitch = angle_processer.pitch_hat;
-		sprintf(message, "roll:%.1f, pitch:%.1f\n ", roll, pitch);
-		HAL_UART_Transmit(&huart2, (uint8_t*) message, strlen(message), 100);
-
-	}
-}
-*/
 /* USER CODE END 0 */
 
 /**
@@ -123,22 +106,10 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
-  AngleProcessor_Init(&angle_processer, 0.005, 0.05);
-  MPU_Init();
-
-  MPU_Calibrate_Accel_Data(accel_bias);
-
-  char calibrate_accel_data[50] = "";
-  sprintf(calibrate_accel_data, "ax:%d, ay:%d, az:%d;", accel_bias[0], accel_bias[1], accel_bias[2]);
-  HAL_UART_Transmit(&huart2, (uint8_t*)calibrate_accel_data , strlen(calibrate_accel_data), HAL_MAX_DELAY);
-
-  MPU_Calibrate_Gyro_Data(gyro_bias);
-
-  char calibrate_gyro_data[50] = "";
-  sprintf(calibrate_gyro_data, "gx:%d, gy:%d, gz:%d;", gyro_bias[0], gyro_bias[1], gyro_bias[2]);
-  HAL_UART_Transmit(&huart2, (uint8_t*)calibrate_gyro_data , strlen(calibrate_gyro_data), HAL_MAX_DELAY);
-
   HAL_TIM_Base_Start_IT(&htim1);
+
+  mpu_init();
+  imu_processor_init(&imu_processor, Q, R, time_interval);
 
   /* USER CODE END 2 */
 
@@ -146,7 +117,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//-------------------------------------------------------
+// Acquire Accelerometer and Gyroscope Data
 /*
 	  MPU_Get_Accelerometer_Data(&ax_data, &ay_data, &az_data);
 	  MPU_Get_Gyroscope_Data(&gx_data, &gy_data, &gz_data);
@@ -156,7 +127,7 @@ int main(void)
 
 	  HAL_Delay(500);
 */
-//--------------------------------------------------------
+// Acquire Accelerometer and Gyroscope Value
 /*
 	  MPU_Get_Gyroscope(&gx, &gy, &gz, gyro_bias);
 	  MPU_Get_Accelerometer(&ax, &ay, &az, accel_bias);
@@ -166,14 +137,15 @@ int main(void)
 
 	  HAL_Delay(500);
 */
-//---------------------------------------------------------
-	  MPU_Get_Angle_KalmanFilter(accel_bias, gyro_bias, &angle_processer, time_interval);
-	  float roll = angle_processer.roll_hat;
-	  float pitch = angle_processer.pitch_hat;
-	  sprintf(message, "roll:%.1f, pitch:%.1f\n ", roll, pitch);
-	  HAL_UART_Transmit(&huart2, (uint8_t*) message, strlen(message), 50);
+// Acquire Angle Value
 
-	  HAL_Delay(50);
+	  imu_process(&imu_processor);
+
+	  sprintf(message, "roll:%.1f, pitch:%.1f\n ", imu_processor.roll_processor.x, imu_processor.pitch_processor.x);
+	  send_message_to_user(message);
+
+	  HAL_Delay(500);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

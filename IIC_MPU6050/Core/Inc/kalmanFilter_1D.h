@@ -10,17 +10,38 @@
 
 typedef struct {
 
-    float Q;      // 过程噪声协方差
-    float R;      // 测量噪声协方差
-    float P;      // 估计误差协方差
-    float K;      // 卡尔曼增益
+/* Kalman Filter for Linear Gaussian System
+ *
+ * 	  motion model: x = Ax + Bu + Q;
+ * 	  measurement model: z = Hx + R;
+ *
+ * 	  state mean: x and state covariance: sigma;
+ *
+ * 	  prediction for state:
+ * 		  x_pred = Ax + Bu;
+ * 		  sigma_pred = A*sigma*A' + Q;
+ *
+ * 	  correction for state:
+ * 		  z_hat = H*x_pred;
+ * 		  K = sigma_pred*H'/(H*sigma_pred*H' + R);
+ * 		  x = x_pred + K*(z - z_hat);
+ * 		  sigma = (I - K*H)*sigma_pred;
+ *
+ */
 
-    float X_hat;  // 估计值 （先验估计->后验估计）
+	float A, B, Q;
+	float H, R;
+	float K;
+
+    float x, sigma;
+    float x_pred, sigma_pred;
 
 } KalmanFilter;
 
-void KalmanFilter_Init(KalmanFilter *kf, float Q, float R);
+void kf_init(KalmanFilter *kf, float A, float B, float Q, float H, float R, float x_int, float sigma_init);
 
-float KalmanFilter_Update(KalmanFilter *kf, float measurement);
+void kf_prediction(KalmanFilter *kf, float u);
+
+void kf_correction(KalmanFilter *kf, float z);
 
 #endif /* INC_KALMANFILTER_1D_H_ */

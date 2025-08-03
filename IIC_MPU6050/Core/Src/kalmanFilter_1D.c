@@ -7,21 +7,49 @@
 
 #include <kalmanFilter_1D.h>
 
-void KalmanFilter_Init(KalmanFilter *kf, float Q, float R) {
+void kf_init(KalmanFilter *kf, float A, float B, float Q, float H, float R, float x_init, float sigma_init) {
+
+    kf->x = x_init;
+    kf->sigma = sigma_init;
+
+	kf->A = A;
+	kf->B = B;
     kf->Q = Q;
+
+    kf->H = H;
     kf->R = R;
-    kf->P = 1.0f;
     kf->K = 0.0f;
-    kf->X_hat = 0.0f;
+
+    kf->x_pred = kf->sigma_pred = 0.0f;
+
 }
 
-float KalmanFilter_Update(KalmanFilter *kf, float measurement) {
+void kf_prediction(KalmanFilter *kf, float u){
 
-    kf->P = kf->P + kf->Q;                 // (e‘=x-x_hat’)协方差时间更新(k-1 -> k’) --  P_k‘ = A*P_k-1*A^ + Q
+	float x = kf->x;
+	float sigma = kf->sigma;
 
-    kf->K = kf->P / (kf->P + kf->R);       // 卡尔曼增益更新 K_k = (P_k’*H^) / ((H*P_k‘*H^) + R)
-    kf->X_hat += kf->K * (measurement - kf->X_hat); //  数据融合 X_hat = X_hat’ + K_k*(X_measure - X_hat‘)
-    kf->P *= (1 - kf->K);                  // （e = x-x_hat）协方差后验更新(k‘ -> k) -- P_k+1 = (I - K_k+1*H^)*P_k’
+	float A = kf->A;
+	float B = kf->B;
+	float Q = kf->Q;
 
-    return kf->X_hat;
+	kf->x_pred = (A * x) + (B * u);
+	kf->sigma_pred = (A * sigma * A) + Q;
+
+}
+
+void kf_correction(KalmanFilter *kf, float z){
+
+	float x_pred = kf->x_pred;
+	float sigma_pred = kf->sigma_pred;
+
+	float H = kf->H;
+	float R = kf->R;
+
+	float z_hat = H * x_pred;
+	kf->K = sigma_pred*H / (H*sigma_pred*H + R);
+
+	kf->x = x_pred + kf->K * (z - z_hat);
+	kf->sigma = (1 - (kf->K * H)) * sigma_pred;
+
 }
