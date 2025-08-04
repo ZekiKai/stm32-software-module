@@ -10,6 +10,12 @@ Here's a list for modules contained and to be built:
 * module for MPU6050
 * module for DRV8833
 
+### Features
+
+* 
+* There's a 1-D kalman filter module for processing data from mpu6050 as a module.
+* The KalmanFilter and IMUProcessor are re-designed to be specified "class" with OOP mindset. 
+
 ### Effect Visualization (to be add)
 
 
@@ -17,6 +23,4 @@ Here's a list for modules contained and to be built:
 ### How to work with it
 
 If you are a beginner at the development with STM32, this is a helpful material for you with the simple code and easy method to use.
-
-
 
