@@ -57,8 +57,6 @@ uint8_t ReceiveDataEx[300];
 
 MessageBufferHandle_t osMessageBuffer;
 
-UART_HandleTypeDef huart_um982;
-
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -102,6 +100,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
 	osBinarySemaphore_UART = osSemaphoreNew(1, 0, NULL);
+
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
@@ -117,7 +116,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* creation of UM982Task */
-  UM982TaskHandle = osThreadNew(UM982Handler, NULL, &UM982Task_attributes);
+    UM982TaskHandle = osThreadNew(UM982Handler, NULL, &UM982Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -157,6 +156,7 @@ void StartDefaultTask(void *argument)
 void UM982Handler(void *argument)
 {
   /* USER CODE BEGIN UM982Handler */
+
 	uint8_t ReceiveData[RECEIVE_MAX_SIZE];
 	uint8_t received_size;
 
@@ -175,38 +175,44 @@ void UM982Handler(void *argument)
 
 			// Data Processing
 			if (received_size > 0){
-				Andly_GPS(&Plane_Position, ReceiveData);
+				satellite_analyze(&plane_from_satellite, ReceiveData);
 			}
 
 			// TxBuffer Transmit
 			HAL_UART_Transmit(&huart2, ReceiveData, received_size, 100);
 
 			int print_size = snprintf(NULL, 0, "LAT:%.6f, LON:%.6f, ALT:%.2f, SAT:%d STS:%d, LEN:%.4f, HEAD:%.4f, PIT:%.4f\n",
-						Plane_Position.latitude,
-						Plane_Position.longitude,
-						Plane_Position.altitude,
-						Plane_Position.gps_num,
-						Plane_Position.gps_status,
-						Plane_Position.length,
-						Plane_Position.heading,
-						Plane_Position.pitch
+
+					plane_from_satellite.latitude,
+					plane_from_satellite.longitude,
+					plane_from_satellite.altitude,
+					plane_from_satellite.gps_num,
+					plane_from_satellite.gps_status,
+					plane_from_satellite.length,
+					plane_from_satellite.heading,
+					plane_from_satellite.pitch
+
 						);
 
 			char CharData[print_size];
 
 			snprintf(CharData, sizeof(CharData), "LAT:%.6f, LON:%.6f, ALT:%.2f, SAT:%d STS:%d, LEN:%.4f, HEAD:%.4f, PIT:%.4f\n",
-					Plane_Position.latitude,
-					Plane_Position.longitude,
-					Plane_Position.altitude,
-					Plane_Position.gps_num,
-					Plane_Position.gps_status,
-					Plane_Position.length,
-					Plane_Position.heading,
-					Plane_Position.pitch
+
+					plane_from_satellite.latitude,
+					plane_from_satellite.longitude,
+					plane_from_satellite.altitude,
+					plane_from_satellite.gps_num,
+					plane_from_satellite.gps_status,
+					plane_from_satellite.length,
+					plane_from_satellite.heading,
+					plane_from_satellite.pitch
+
 					);
 
 			HAL_UART_Transmit(&huart2, (uint8_t *)CharData, sizeof(CharData), 100);
+
 		} else {
+
 //  		HAL_UART_Transmit(&huart2, (uint8_t *)"Semaphore Error\n", 17, 100);
 		}
   }
